@@ -135,6 +135,7 @@ class Event(object):
             s += ', retry in {0}ms'.format(self.retry)
         return s
 
+
 def now():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -229,7 +230,7 @@ def proxy(path):
     }
 
     req = requests.Request(
-        method = original_request.method,
+        method = request.method,
         url = url,
         headers = filtered_headers,
         data = request.get_data(),
