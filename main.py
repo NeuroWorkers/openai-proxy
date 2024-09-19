@@ -176,7 +176,7 @@ def limit_remote_addr():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def proxy(path):
-    log_request( request.method, request.url, request.headers, request.body() )
+    log_request( request.method, request.url, request.headers, request.data )
 
     url = request.url.replace( request.host_url, 'https://api.openai.com/' )
     stream = None
