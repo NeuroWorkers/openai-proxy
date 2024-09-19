@@ -155,6 +155,7 @@ def log_response(response):
         headers_dict[key.lower()] = value
 
     logging.info( log_message )
+    logging.info( type(response.content) )
 
     content_encoding = headers_dict.get('content-encoding')
     body = response.content
@@ -220,8 +221,10 @@ def proxy(path):
 
     if not stream:
         excluded_headers = ['content-length', 'connection']
-        headers = [(name, value) for (name, value) in resp.raw.headers.items(
-        ) if name.lower() not in excluded_headers]
+        headers = [
+            (name, value) for (name, value) in resp.raw.headers.items() \
+                if name.lower() not in excluded_headers
+        ]
         response = app.make_response((resp.content, resp.status_code, headers))
         return response
 
