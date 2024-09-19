@@ -162,8 +162,8 @@ def log_response(response):
 
     # Поддержка сжатого содержимого
     if content_encoding == 'br':
-        import brotli
-        decompressed_body = brotli.decompress(body)
+        import brotlicffi
+        decompressed_body = brotlicffi.decompress(body)
     elif content_encoding == 'gzip':
         import gzip
         decompressed_body = gzip.decompress(body)
