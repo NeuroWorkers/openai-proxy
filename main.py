@@ -153,11 +153,12 @@ def log_orig_request( request ):
 
 def log_our_request( prepared ):
     log_message = f"[{now()}] OUR REQUEST:\n"
-    logger.info(f"Method: {prepared.method}")
-    logger.info(f"URL: {prepared.url}")
-    logger.info("Headers:")
+    log_message += f"Method: {prepared.method}"
+    log_message += f"URL: {prepared.url}"
+    log_message += "Headers:"
     for header, value in prepared.headers.items():
-        logger.info(f"    {header}: {value}")
+        log_message += f"{header}: {value}"
+    logging.info( log_message )
 
 
 def log_response(response):
