@@ -144,19 +144,20 @@ def log_request(method, url, headers, body):
     logging.info( log_message )
 
 
-def log_response(status, headers, body):
+def log_response(response):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_message = f"[{now}] RESPONSE Status: {status}:\n"
+    log_message = f"[{now}] RESPONSE Status: {response.status}:\n"
 
     log_message += "Headers:\n"
     headers_dict = {}
-    for key, value in headers.items():
+    for key, value in response.headers.items():
         log_message += f"{key}: {value}\n"
         headers_dict[key.lower()] = value
 
     logging.info( log_message )
 
     content_encoding = headers_dict.get('content-encoding')
+    body = response.data
 
     # Поддержка сжатого содержимого
     if content_encoding == 'br':
@@ -215,12 +216,13 @@ def proxy(path):
                  in request.headers if key != 'Host'},
         data=request.get_data(),
         allow_redirects=False)
+    log_response( resp )
+
     if not stream:
         excluded_headers = ['content-length', 'connection']
         headers = [(name, value) for (name, value) in resp.raw.headers.items(
         ) if name.lower() not in excluded_headers]
         response = app.make_response((resp.content, resp.status_code, headers))
-        log_response( response.status, response.headers, response.data )
         return response
 
     def stream_generate():
