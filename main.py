@@ -154,6 +154,8 @@ def log_response(status, headers, body):
         log_message += f"{key}: {value}\n"
         headers_dict[key.lower()] = value
 
+    logging.info( log_message )
+
     content_encoding = headers_dict.get('content-encoding')
 
     # Поддержка сжатого содержимого
@@ -171,8 +173,7 @@ def log_response(status, headers, body):
 
     body_text = decompressed_body.decode('utf-8', errors='ignore')
 
-    log_message += f"Body:\n{body_text}\n\n"
-
+    log_message = f"Body:\n{body_text}\n\n"
     logging.info( log_message )
 
 
