@@ -6,8 +6,12 @@ import requests
 import logging
 from datetime import datetime
 
+LOG_FILE_PATH = '/var/log/openai-proxy-requests.log'
+ALLOWED_IPS = ['81.22.48.239', '45.43.88.234']
+IGNORE_REQUEST_HEADERS = ['Host', 'Accept-Encoding']
+
 logging.basicConfig(
-    filename = '/var/log/openai-proxy-requests.log',
+    filename = LOG_FILE_PATH,
     level = logging.INFO,
     format = '%(message)s'
 )
@@ -181,7 +185,6 @@ def log_response(response):
 
 app = Flask(__name__)
 # Список разрешенных IP-адресов
-ALLOWED_IPS = ['81.22.48.239', '45.43.88.234']
 
 @app.before_request
 def limit_remote_addr():
@@ -210,11 +213,12 @@ def proxy(path):
         pass
 
     resp = requests.request(
-        method=request.method,
-        url=url,
-        stream=stream,
-        headers={key: value for (key, value)
-                 in request.headers if key != 'Host'},
+        method = request.method,
+        url = url,
+        stream = stream,
+        headers = {
+            key: value for (key, value) in request.headers if key not in IGNORE_REQUEST_HEADERS
+        },
         data=request.get_data(),
         allow_redirects=False)
     log_response( resp )
