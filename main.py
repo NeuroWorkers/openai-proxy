@@ -6,7 +6,11 @@ import requests
 import logging
 from datetime import datetime
 
-logging.basicConfig(filename='/var/log/openai-proxy-requests.log', level=logging.INFO, format='%(message)s')
+logging.basicConfig(
+    filename = '/var/log/openai-proxy-requests.log',
+    level = logging.INFO,
+    format = '%(message)s'
+)
 
 class SSEClient(object):
     """Implementation of a SSE client.
@@ -137,7 +141,7 @@ def log_request(method, url, headers, body):
     for key, value in headers.items():
         log_message += f"{key}: {value}\n"
     log_message += f"Body:\n{body.decode('utf-8', errors='ignore')}\n\n"
-    logging.info(log_message)
+    logging.info( log_message )
 
 
 def log_response(status, headers, body):
@@ -148,7 +152,7 @@ def log_response(status, headers, body):
     for key, value in headers.items():
         log_message += f"{key}: {value}\n"
     log_message += f"Body:\n{body.decode('utf-8', errors='ignore')}\n\n"
-    logging.info(log_message)
+    logging.info( log_message )
 
 
 app = Flask(__name__)
