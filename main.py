@@ -198,7 +198,7 @@ def proxy(path):
         headers = [(name, value) for (name, value) in resp.raw.headers.items(
         ) if name.lower() not in excluded_headers]
         response = app.make_response((resp.content, resp.status_code, headers))
-        log_response( response.status, response.headers, response.content )
+        log_response( response.status, response.headers, response.data )
         return response
 
     def stream_generate():
