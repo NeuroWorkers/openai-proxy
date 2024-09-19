@@ -1,12 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from flask import Flask, request, Response
 import requests
 import logging
+from datetime import datetime
 
-_FIELD_SEPARATOR = ':'
-
+logging.basicConfig(filename='/var/log/openai-proxy-requests.log', level=logging.INFO, format='%(message)s')
 
 class SSEClient(object):
     """Implementation of a SSE client.
@@ -53,10 +53,10 @@ class SSEClient(object):
 
                 # Lines starting with a separator are comments and are to be
                 # ignored.
-                if not line.strip() or line.startswith(_FIELD_SEPARATOR):
+                if not line.strip() or line.startswith(':'):
                     continue
 
-                data = line.split(_FIELD_SEPARATOR, 1)
+                data = line.split(':', 1)
                 field = data[0]
 
                 # Ignore unknown fields.
@@ -128,18 +128,59 @@ class Event(object):
         return s
 
 
-app = Flask(__name__)
+def log_request(method, url, headers, body):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_message = f"[{now}] REQUEST:\n"
+    log_message += f"Method: {method}\n"
+    log_message += f"URL: {url}\n"
+    log_message += "Headers:\n"
+    for key, value in headers.items():
+        log_message += f"{key}: {value}\n"
+    log_message += f"Body:\n{body.decode('utf-8', errors='ignore')}\n\n"
+    logging.info(log_message)
 
+
+def log_response(status, headers, body):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_message = f"[{now}] RESPONSE:\n"
+    log_message += f"Status: {status}\n"
+    log_message += "Headers:\n"
+    for key, value in headers.items():
+        log_message += f"{key}: {value}\n"
+    log_message += f"Body:\n{body.decode('utf-8', errors='ignore')}\n\n"
+    logging.info(log_message)
+
+
+app = Flask(__name__)
+# Список разрешенных IP-адресов
+ALLOWED_IPS = ['81.22.48.239', '45.43.88.234']
+
+@app.before_request
+def limit_remote_addr():
+    if request.remote_addr not in ALLOWED_IPS:
+        abort(403)  # Возвращаем ошибку 403 Forbidden
+
+# @app.after_request
+# def after_request(response):
+#     # Печать информации об ответе
+#     print("Response status:", response.status)
+#     print("Response headers:", response.headers)
+#     print("Response length:", len(response.get_data()))
+#     # Возвращаем ответ, чтобы он был отправлен клиенту
+#     return response
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def proxy(path):
-    url = request.url.replace(request.host_url, 'https://api.openai.com/')
+    log_request( request.method, request.url, request.headers, request.body() )
+
+    url = request.url.replace( request.host_url, 'https://api.openai.com/' )
     stream = None
     try:
         stream = request.get_json().get('stream', None)
     except:
         pass
+
     resp = requests.request(
         method=request.method,
         url=url,
@@ -149,11 +190,11 @@ def proxy(path):
         data=request.get_data(),
         allow_redirects=False)
     if not stream:
-        excluded_headers = ['content-encoding',
-                            'content-length', 'transfer-encoding', 'connection']
+        excluded_headers = ['content-length', 'connection']
         headers = [(name, value) for (name, value) in resp.raw.headers.items(
         ) if name.lower() not in excluded_headers]
         response = app.make_response((resp.content, resp.status_code, headers))
+        log_response( response.status, response.headers, response.content )
         return response
 
     def stream_generate():
