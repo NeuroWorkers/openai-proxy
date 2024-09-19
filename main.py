@@ -146,18 +146,18 @@ def log_request(method, url, headers, body):
 
 def log_response(response):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_message = f"[{now}] RESPONSE Status: {response.status}:\n"
+    log_message = f"[{now}] RESPONSE Status: {response.status_code}:\n"
 
     log_message += "Headers:\n"
     headers_dict = {}
-    for key, value in response.headers.items():
+    for key, value in response.raw.headers.items():
         log_message += f"{key}: {value}\n"
         headers_dict[key.lower()] = value
 
     logging.info( log_message )
 
     content_encoding = headers_dict.get('content-encoding')
-    body = response.data
+    body = response.content
 
     # Поддержка сжатого содержимого
     if content_encoding == 'br':
