@@ -135,22 +135,32 @@ class Event(object):
             s += ', retry in {0}ms'.format(self.retry)
         return s
 
+def now():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-def log_request(method, url, headers, body):
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_message = f"[{now}] REQUEST:\n"
-    log_message += f"Method: {method}\n"
+
+def log_orig_request( request ):
+    log_message = f"[{now()}] REQUEST:\n"
+    log_message += f"Method: {request.method}\n"
     log_message += f"URL: {url}\n"
     log_message += "Headers:\n"
-    for key, value in headers.items():
+    for key, value in request.headers.items():
         log_message += f"{key}: {value}\n"
-    log_message += f"Body:\n{body.decode('utf-8', errors='ignore')}\n\n"
+    log_message += f"Body:\n{request.data.decode('utf-8', errors='ignore')}\n\n"
     logging.info( log_message )
 
 
+def log_our_request( prepared ):
+    log_message = f"[{now()}] OUR REQUEST:\n"
+    logger.info(f"Method: {prepared.method}")
+    logger.info(f"URL: {prepared.url}")
+    logger.info("Headers:")
+    for header, value in prepared.headers.items():
+        logger.info(f"    {header}: {value}")
+
+
 def log_response(response):
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_message = f"[{now}] RESPONSE Status: {response.status_code}:\n"
+    log_message = f"[{now()}] RESPONSE Status: {response.status_code}:\n"
 
     log_message += "Headers:\n"
     headers_dict = {}
@@ -203,7 +213,7 @@ def limit_remote_addr():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def proxy(path):
-    log_request( request.method, request.url, request.headers, request.data )
+    log_orig_request( request.method, request.url, request.headers, request.data )
 
     url = request.url.replace( request.host_url, 'https://api.openai.com/' )
     stream = None
@@ -212,15 +222,25 @@ def proxy(path):
     except:
         pass
 
-    resp = requests.request(
-        method = request.method,
+    # Фильтрация заголовков, исключая нежелательные
+    filtered_headers = {
+        key: value for key, value in request.headers.items()
+        if key not in IGNORE_REQUEST_HEADERS
+    }
+
+    req = requests.Request(
+        method = original_request.method,
         url = url,
-        stream = stream,
-        headers = {
-            key: value for (key, value) in request.headers if key not in IGNORE_REQUEST_HEADERS
-        },
-        data=request.get_data(),
-        allow_redirects=False)
+        headers = filtered_headers,
+        data = request.get_data(),
+    )
+
+    prepared_req = req.prepare()
+    log_our_request( prepared_req )
+
+    session = requests.Session()
+    resp = session.send( prepared_req, stream = stream, allow_redirects = False )
+
     log_response( resp )
 
     if not stream:
