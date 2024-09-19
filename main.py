@@ -142,7 +142,7 @@ def now():
 def log_orig_request( request ):
     log_message = f"[{now()}] REQUEST:\n"
     log_message += f"Method: {request.method}\n"
-    log_message += f"URL: {url}\n"
+    log_message += f"URL: {request.url}\n"
     log_message += "Headers:\n"
     for key, value in request.headers.items():
         log_message += f"{key}: {value}\n"
