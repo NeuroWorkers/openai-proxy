@@ -146,12 +146,33 @@ def log_request(method, url, headers, body):
 
 def log_response(status, headers, body):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_message = f"[{now}] RESPONSE:\n"
-    log_message += f"Status: {status}\n"
+    log_message = f"[{now}] RESPONSE Status: {status}:\n"
+
     log_message += "Headers:\n"
+    headers_dict = {}
     for key, value in headers.items():
         log_message += f"{key}: {value}\n"
-    log_message += f"Body:\n{body.decode('utf-8', errors='ignore')}\n\n"
+        headers_dict[key.lower()] = value
+
+    content_encoding = headers_dict.get('content-encoding')
+
+    # Поддержка сжатого содержимого
+    if content_encoding == 'br':
+        import brotli
+        decompressed_body = brotli.decompress(body)
+    elif content_encoding == 'gzip':
+        import gzip
+        decompressed_body = gzip.decompress(body)
+    elif content_encoding == 'deflate':
+        import zlib
+        decompressed_body = zlib.decompress(body)
+    else:
+        decompressed_body = body    
+
+    body_text = decompressed_body.decode('utf-8', errors='ignore')
+
+    log_message += f"Body:\n{body_text}\n\n"
+
     logging.info( log_message )
 
 
