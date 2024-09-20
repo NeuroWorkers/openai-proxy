@@ -8,7 +8,10 @@ from datetime import datetime
 
 LOG_FILE_PATH = '/var/log/openai-proxy-requests.log'
 ALLOWED_IPS = ['81.22.48.239', '45.43.88.234']
-IGNORE_REQUEST_HEADERS = ['Host', 'Accept-Encoding']
+IGNORE_REQUEST_HEADERS = ['Host'] # , 'Accept-Encoding'
+
+OPENAI_API_URL = 'https://api.openai.com/'
+ANTHROPIC_API_URL = 'https://api.anthropic.com/'
 
 logging.basicConfig(
     filename = LOG_FILE_PATH,
@@ -217,7 +220,7 @@ def limit_remote_addr():
 def proxy(path):
     log_orig_request( request )
 
-    url = request.url.replace( request.host_url, 'https://api.openai.com/' )
+    url = request.url.replace( request.host_url, OPENAI_API_URL )
     stream = None
     try:
         stream = request.get_json().get('stream', None)
