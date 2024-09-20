@@ -6,6 +6,7 @@ import requests
 import logging
 from datetime import datetime
 
+PROXY_PORT_NUMBER = 9000
 LOG_FILE_PATH = '/var/log/openai-proxy-requests.log'
 ALLOWED_IPS = ['81.22.48.239', '45.43.88.234']
 IGNORE_REQUEST_HEADERS = ['Host', 'Accept-Encoding']
@@ -13,11 +14,29 @@ IGNORE_REQUEST_HEADERS = ['Host', 'Accept-Encoding']
 OPENAI_API_URL = 'https://api.openai.com/'
 ANTHROPIC_API_URL = 'https://api.anthropic.com/'
 
-logging.basicConfig(
-    filename = LOG_FILE_PATH,
-    level = logging.INFO,
-    format = '%(message)s'
-)
+
+class Event(object):
+    """Representation of an event from the event stream."""
+
+    def __init__(self, id=None, event='message', data='', retry=None):
+        self.id = id
+        self.event = event
+        self.data = data
+        self.retry = retry
+
+    def __str__(self):
+        s = '{0} event'.format(self.event)
+        if self.id:
+            s += ' #{0}'.format(self.id)
+        if self.data:
+            s += ', {0} byte{1}'.format(len(self.data),
+                                        's' if len(self.data) else '')
+        else:
+            s += ', no data'
+        if self.retry:
+            s += ', retry in {0}ms'.format(self.retry)
+        return s
+
 
 class SSEClient(object):
     """Implementation of a SSE client.
@@ -116,28 +135,13 @@ class SSEClient(object):
         self._event_source.close()
 
 
-class Event(object):
-    """Representation of an event from the event stream."""
+# Logging requests / responses support 
 
-    def __init__(self, id=None, event='message', data='', retry=None):
-        self.id = id
-        self.event = event
-        self.data = data
-        self.retry = retry
-
-    def __str__(self):
-        s = '{0} event'.format(self.event)
-        if self.id:
-            s += ' #{0}'.format(self.id)
-        if self.data:
-            s += ', {0} byte{1}'.format(len(self.data),
-                                        's' if len(self.data) else '')
-        else:
-            s += ', no data'
-        if self.retry:
-            s += ', retry in {0}ms'.format(self.retry)
-        return s
-
+logging.basicConfig(
+    filename = LOG_FILE_PATH,
+    level = logging.INFO,
+    format = '%(message)s'
+)
 
 def now():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -206,14 +210,6 @@ def limit_remote_addr():
     if request.remote_addr not in ALLOWED_IPS:
         abort(403)  # Возвращаем ошибку 403 Forbidden
 
-# @app.after_request
-# def after_request(response):
-#     # Печать информации об ответе
-#     print("Response status:", response.status)
-#     print("Response headers:", response.headers)
-#     print("Response length:", len(response.get_data()))
-#     # Возвращаем ответ, чтобы он был отправлен клиенту
-#     return response
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
@@ -240,6 +236,7 @@ def proxy(path):
         if key not in IGNORE_REQUEST_HEADERS
     }
 
+    # Создадим и препарируем объект запроса, чтобы мы потом могли его задампить
     req = requests.Request(
         method = request.method,
         url = url,
@@ -248,7 +245,7 @@ def proxy(path):
     )
 
     prepared_req = req.prepare()
-    log_our_request( prepared_req )
+    # log_our_request( prepared_req )
 
     session = requests.Session()
     resp = session.send( prepared_req, stream = stream, allow_redirects = False )
@@ -272,4 +269,4 @@ def proxy(path):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=9000)
+    app.run( host = '0.0.0.0', port = PROXY_PORT_NUMBER )
