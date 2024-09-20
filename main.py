@@ -8,7 +8,7 @@ from datetime import datetime
 
 LOG_FILE_PATH = '/var/log/openai-proxy-requests.log'
 ALLOWED_IPS = ['81.22.48.239', '45.43.88.234']
-IGNORE_REQUEST_HEADERS = ['Host'] # , 'Accept-Encoding'
+IGNORE_REQUEST_HEADERS = ['Host', 'Accept-Encoding']
 
 OPENAI_API_URL = 'https://api.openai.com/'
 ANTHROPIC_API_URL = 'https://api.anthropic.com/'
