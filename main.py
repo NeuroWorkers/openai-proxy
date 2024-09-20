@@ -220,12 +220,19 @@ def limit_remote_addr():
 def proxy(path):
     log_orig_request( request )
 
-    url = request.url.replace( request.host_url, OPENAI_API_URL )
-    stream = None
+    # Определяем, какой API использовать
+    if 'X-Api-Key' in request.headers:
+        base_url = ANTHROPIC_API_URL
+    else:
+        base_url = OPENAI_API_URL
+
+    url = request.url.replace( request.host_url, base_url )
+
+    # Определяем нужен ли потоковый режим
     try:
         stream = request.get_json().get('stream', None)
     except:
-        pass
+        stream = None
 
     # Фильтрация заголовков, исключая нежелательные
     filtered_headers = {
