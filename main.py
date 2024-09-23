@@ -8,7 +8,11 @@ from datetime import datetime
 
 PROXY_PORT_NUMBER = 9000
 LOG_FILE_PATH = '/var/log/openai-proxy-requests.log'
-ALLOWED_IPS = ['81.22.48.239', '45.43.88.234']
+ALLOWED_IPS = [
+    '81.22.48.239', # xtrueman
+    '45.43.88.234', # outline
+    '46.8.53.125', # tgposter
+]
 IGNORE_REQUEST_HEADERS = ['Host', 'Accept-Encoding']
 
 OPENAI_API_URL = 'https://api.openai.com/'
