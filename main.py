@@ -11,7 +11,8 @@ LOG_FILE_PATH = '/var/log/openai-proxy-requests.log'
 ALLOWED_IPS = [
     '81.22.48.239', # xtrueman
     '45.43.88.234', # outline
-    '46.8.53.125', # tgposter
+    '46.8.53.125',  # tgposter
+    '85.113.58.235' # llmtech server
 ]
 IGNORE_REQUEST_HEADERS = ['Host', 'Accept-Encoding']
 
